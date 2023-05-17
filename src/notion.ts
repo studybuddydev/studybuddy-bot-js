@@ -1,11 +1,5 @@
-import { Telegraf } from "telegraf";
-import { message } from 'telegraf/filters';
-import * as dotenv from 'dotenv';
-import axios from 'axios';
-import { parse } from 'node-html-parser';
-import fs from 'fs';
 import { Client } from '@notionhq/client'
-
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -14,28 +8,34 @@ const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const db_id = process.env.DB_ID ?? '';
 const tododev_id = process.env.TODODEV_ID ?? '';
 
-
-const bot = new Telegraf(process.env.BOT_TOKEN ?? '');
-
-bot.start((ctx) => ctx.reply('ciao sono studybuddy'));
-
-
-bot.command('ping', (ctx) => ctx.reply('pong'));
-
-bot.command('todo', async (ctx) => {
-    const todos = await getTodos()
-
-    ctx.reply(todos.join('\n'))
-
-
-});
-async function check() {
-    console.log('ciao')
+async function addItem() {
+    const response = await notion.pages.create({
+        parent: {
+            database_id: db_id,
+        },
+        properties: {
+            Name: {
+                title: [
+                    {
+                        text: {
+                            content: "New Item",
+                        },
+                    },
+                ],
+            },
+            Description: {
+                rich_text: [
+                    {
+                        text: {
+                            content: "This is a new item.",
+                        },
+                    },
+                ],
+            },
+        },
+    });
+    console.log(response);
 }
-
-//setInterval(() => check(), 1000 );
-
-
 
 async function getTodos() {
     const response = await notion.databases.query({
@@ -55,10 +55,6 @@ async function getTodos() {
             }
         }
     }
-    return todos
 }
 
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
-bot.launch();
-console.log('Bot started');
+getTodos()
